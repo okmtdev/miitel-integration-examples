@@ -97,6 +97,25 @@ def _extract_upload_urls(response_json: Any) -> dict[str, str]:
     return result
 
 
+def _override_miitel_user_id(metadata: Any, miitel_user_id: str) -> int:
+    """metadata 内の null でない participants[].miitel_user_id を一括で上書きする。
+
+    取引先側など null の participant はそのまま (= 上書き対象は応対ユーザーの枠)。
+    上書きした件数を返す。
+    """
+    count = 0
+    if not isinstance(metadata, dict):
+        return count
+    for call_data in metadata.get("call_data", []) or []:
+        if not isinstance(call_data, dict):
+            continue
+        for participant in call_data.get("participants", []) or []:
+            if isinstance(participant, dict) and participant.get("miitel_user_id") is not None:
+                participant["miitel_user_id"] = miitel_user_id
+                count += 1
+    return count
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument(
@@ -122,6 +141,14 @@ def main(argv: list[str] | None = None) -> int:
         help="アップロードする音声ファイル。複数指定可。",
     )
     parser.add_argument(
+        "--miitel-user-id",
+        default=os.environ.get("MIITEL_USER_ID"),
+        help=(
+            "応対ユーザーの UUID。指定すると metadata 内の null でない "
+            "miitel_user_id をすべて上書きする (環境変数 MIITEL_USER_ID)。"
+        ),
+    )
+    parser.add_argument(
         "--content-type",
         default=None,
         help="PUT 時の Content-Type。既定では付けない (署名付き URL のため)。",
@@ -138,6 +165,16 @@ def main(argv: list[str] | None = None) -> int:
 
     with open(args.metadata, encoding="utf-8") as f:
         metadata = json.load(f)
+
+    if args.miitel_user_id:
+        replaced = _override_miitel_user_id(metadata, args.miitel_user_id)
+        print(f"miitel_user_id を {replaced} 件上書きしました。")
+        if replaced == 0:
+            print(
+                "  (上書き対象なし: metadata 内の miitel_user_id がすべて null です。"
+                "応対ユーザーの participant に非 null のプレースホルダを置いてください。)",
+                file=sys.stderr,
+            )
 
     audio_files = _parse_audio_args(args.audio)
 

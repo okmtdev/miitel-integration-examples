@@ -67,10 +67,21 @@ python3 phone_incoming_webhook.py \
     --webhook-url "$MIITEL_IW_WEBHOOK_URL" \
     --metadata samples/phone_call_data.json \
     --audio test_id=./recording.mp3
+
+# miitel_user_id を JSON を編集せず CLI から差し込む
+python3 phone_incoming_webhook.py \
+    --webhook-url "$MIITEL_IW_WEBHOOK_URL" \
+    --metadata samples/phone_call_data.json \
+    --audio test_id=./recording.mp3 \
+    --miitel-user-id "コピーした-UUID"
 ```
 
 - `--audio call_data_id=PATH` は複数指定できます（call_data ごとに音声を対応付け）。
 - `--webhook-url` は環境変数 `MIITEL_IW_WEBHOOK_URL` を設定していれば省略可能です。
+- `--miitel-user-id`（環境変数 `MIITEL_USER_ID`）を指定すると、JSON を手編集せずに
+  [ユーザー ID を確認] でコピーした UUID を差し込めます。**metadata 内の `null` でない
+  `miitel_user_id` をすべて上書き**し、取引先側など `null` の participant はそのままです
+  （= 応対ユーザーの participant に非 `null` のプレースホルダを置いておく運用）。
 - MP では認証トークンは不要ですが、必要な場合のみ `--token`（環境変数 `MIITEL_IW_TOKEN`）を指定できます。
 
 #### 主なメタデータ項目（`call_data[]`）
