@@ -20,7 +20,7 @@ Incoming Webhook は 2 段階のフローで動きます。
 参考ドキュメント:
 
 - MP: [Incoming Webhook の仕様と利用方法](https://developers.miitel.com/docs/incoming-webhook-getting-started) / [API リファレンス](https://developers.miitel.com/reference/call__webhook_call_creation)
-- MM: [Video Incoming Webhook の仕様と利用方法](https://developers.miitel.com/docs/video-incoming-webhook-getting-started) / [API リファレンス](https://developers.miitel.com/reference/videovideoincomingwebhookreceive)
+- MM: [Video Incoming Webhook の仕様と利用方法](https://developers.miitel.com/docs/video-incoming-webhook-getting-started) / [API リファレンス](https://developers.miitel.com/reference/video__webhook_video_reception)
 
 ## 事前準備（MP）
 
@@ -98,6 +98,13 @@ python3 phone_incoming_webhook.py \
 
 ### MiiTel Meetings / Video (MM)
 
+MM 用の Webhook URL は MiiTel Admin の **[外部連携] > [Incoming Webhook] > [会議履歴] タブ
+> [URL を作成]** で発行します。応対ユーザーには **「Incoming Webhook（会議履歴）を使用する」**
+を許可し、その **ユーザー ID（UUID）** を `video_data.host` / `participants[].miitel_user_id`
+に指定します。MP 同様、**Webhook POST に認証ヘッダーは不要**です（URL 自体が資格情報）。
+
+参考: [仕様](https://developers.miitel.com/docs/video-incoming-webhook-getting-started) / [API リファレンス](https://developers.miitel.com/reference/video__webhook_video_reception)
+
 ```bash
 cd incoming-webhook/python
 
@@ -114,15 +121,23 @@ python3 video_incoming_webhook.py \
     --media ./meeting.mp4
 ```
 
-> MM 側で認証トークンが必要な場合は `--token`（環境変数 `MIITEL_VIDEO_IW_TOKEN`）を指定できます。
-
 - レスポンス内のアップロード URL は自動探索しますが、見つからない場合は
   `--upload-url-json-path data.upload_url` のようにドット区切りで明示できます。
 
-> **注意:** `samples/video_data.json` のフィールド名はサンプルです。MM 側の正確な
-> スキーマは [Video Incoming Webhook の API リファレンス](https://developers.miitel.com/reference/videovideoincomingwebhookreceive)
-> を確認のうえ調整してください。本スクリプトは JSON ファイルの内容をそのまま送信するため、
-> コードを変更せずにメタデータを差し替えられます。
+#### メタデータ項目（`video_data` ※オブジェクト。MP の配列とは異なる）
+
+| フィールド | 必須 | 説明 |
+| --- | :---: | --- |
+| `title` | ✓ | 会議タイトル |
+| `file_type` | ✓ | ファイル形式（例: `mp3` / `mp4`） |
+| `host` | ✓ | ホストユーザーの UUID |
+| `starts_at` / `ends_at` | ✓ | ISO 8601 形式の時刻 |
+| `external_id` | ✓ | 外部システム側の会議 ID |
+| `number_of_participants` | ✓ | 参加者数（整数） |
+| `channel_type` | ✓ | `STEREO` / `MONAURAL`（モノラルはアップロード後に話者判定） |
+| `tags[]` | ✓ | `{"value": "..."}` |
+| `participants[]` | ✓ | `name`, `miitel_user_id`(UUID), `stereo_lr`(`left`/`right`) |
+| `metadata` | | 任意のオブジェクト（例: `{"recording_device": "iPhone"}`） |
 
 ## ファイル構成
 

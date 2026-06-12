@@ -4,21 +4,20 @@
 MiiTel Phone の Incoming Webhook と同様に、外部の会議録画 (動画/音声) を
 MiiTel Meetings に取り込むための 2 段階フロー。
 
-  1. 会議メタデータを Video Incoming Webhook URL に POST する。
-     MiiTel が会議履歴を生成し、メディアアップロード用の URL を返す。
+  1. 会議メタデータ (video_data) を Video Incoming Webhook URL に POST する。
+     MiiTel が会議履歴を生成し、ファイルアップロード用の URL を返す。
   2. 返された URL に動画/音声ファイルをバイナリで PUT する。
 
-Webhook URL / 認証トークンは MiiTel CS から払い出される値を使う。
-メタデータは JSON ファイルから読み込むため、正確なフィールド仕様は
-公式リファレンスに従って JSON を用意すればよい。
+Webhook URL は MiiTel Admin の [外部連携] > [Incoming Webhook] > [会議履歴] で
+発行した値を使う (URL 自体が資格情報)。メタデータは JSON ファイルから読み込むため、
+正確なフィールド仕様は公式リファレンスに従って JSON を用意する。
 
   仕様: https://developers.miitel.com/docs/video-incoming-webhook-getting-started
-  API : https://developers.miitel.com/reference/videovideoincomingwebhookreceive
+  API : https://developers.miitel.com/reference/video__webhook_video_reception
 
 実行例:
   python video_incoming_webhook.py \
       --webhook-url "$MIITEL_VIDEO_IW_WEBHOOK_URL" \
-      --token "$MIITEL_VIDEO_IW_TOKEN" \
       --metadata samples/video_data.json \
       --media ./meeting.mp4
 """
@@ -40,6 +39,7 @@ _UPLOAD_URL_KEYS = (
     "video_upload_url",
     "media_upload_url",
     "recording_upload_url",
+    "file_upload_url",
     "url",
 )
 
