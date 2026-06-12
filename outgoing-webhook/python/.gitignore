@@ -1,0 +1,4 @@
+# ローカル動作確認で生成される成果物
+received/
+seen.json
+*.tmp

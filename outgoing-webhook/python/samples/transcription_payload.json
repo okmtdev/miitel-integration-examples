@@ -1,0 +1,90 @@
+{
+  "call": {
+    "id": "0184f502-8b5f-b967-10c1-625c89785630",
+    "tenant_code": "miitel-test",
+    "details": [
+      {
+        "id": "0184f502-8b5f-b967-10c1-625c89785630",
+        "dial_starts_at": "2022-12-09T03:41:48+00:00",
+        "dial_answered_at": "2022-12-09T03:41:54+00:00",
+        "dial_ends_at": "2022-12-09T03:42:17+00:00",
+        "queueing_starts_at": null,
+        "queueing_answered_at": null,
+        "queueing_ends_at": null,
+        "call_type": "OUTGOING_CALL",
+        "circuit_number": "05000000000",
+        "circuit_name": "05000000000",
+        "from_number": null,
+        "to_number": "05099999999",
+        "previous_id": null,
+        "dtmf": "0",
+        "analysis": {
+          "score": 313.3515187539091,
+          "tlr": 0.8095,
+          "rally_count": 5,
+          "overlap_count": 0,
+          "silence_count": 1,
+          "silence_positions": [[4.66, 39.91], [40.32, 44.43]],
+          "overlap_positions": []
+        },
+        "participants": [
+          {
+            "id": "0184f502-8b66-4ab1-10d3-34c0049a9100",
+            "from_to": "FROM",
+            "name": "revcomm tarou",
+            "company_name": null,
+            "login_id": "test@example.com",
+            "analysis": {
+              "f0": 116.8819,
+              "speechrate": 8.8416,
+              "variance": 22.803,
+              "filler_count": 2,
+              "positive_score": 0.0,
+              "negative_score": 0.0
+            }
+          },
+          {
+            "id": "0184f502-8b66-1a28-3896-550ac23b8e34",
+            "from_to": "TO",
+            "name": null,
+            "company_name": null,
+            "login_id": null,
+            "analysis": {
+              "f0": 234.0116,
+              "speechrate": 6.3676,
+              "variance": null,
+              "filler_count": 5,
+              "positive_score": 0.0,
+              "negative_score": 0.0
+            }
+          }
+        ],
+        "tags": [
+          { "created_by": "revcomm tarou", "creator_type": "TENANT_USER", "value": "大項目①" },
+          { "created_by": "revcomm tarou", "creator_type": "TENANT_USER", "value": "詳細項目①" }
+        ],
+        "comments": [
+          { "created_at": "2022-12-09T04:45:13.732021+00:00", "created_by": "revcomm tarou", "value": "コメント" }
+        ],
+        "keywords": [
+          { "starts_at": 2, "participant_id": "0184f502-8b66-1a28-3896-550ac23b8e34", "value": "みーてる" },
+          { "starts_at": 2, "participant_id": "0184f502-8b66-1a28-3896-550ac23b8e34", "value": "でんわ" }
+        ],
+        "phrases": [
+          {
+            "participant_id": "0184f502-8b66-1a28-3896-550ac23b8e34",
+            "raw": [
+              { "order": 1, "phrase": "お世話になります。IP電話ミーテルの鈴木と申します。", "phrase_nofiller": "お世話になります。IP電話ミーテルの鈴木と申します。", "start_at": 2.16, "end_at": 5.345, "filler_num": 0 }
+            ],
+            "summary": []
+          }
+        ],
+        "speech_recognition": {
+          "raw": "0:00 (ユーザー) 結構ですー。\n0:02 (取引先) お世話になります。IP電話ミーテルの鈴木と申します。",
+          "summary": ""
+        }
+      }
+    ]
+  },
+  "params_key": "z&aH+&Kz8saC"
+}
