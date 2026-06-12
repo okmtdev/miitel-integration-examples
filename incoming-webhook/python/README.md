@@ -198,6 +198,7 @@ python3 authenticate.py --credentials samples/auth_credentials.json
 
 - ネットワークエラーや 5xx 応答時は指数バックオフ（2s, 4s, 8s）で最大 3 回リトライします。
   4xx はリクエスト内容の問題のためリトライしません。
-- 音声アップロードの PUT は、署名付き URL のため既定で `Content-Type` を付けません
-  （必要なら `--content-type` で指定可能）。
+- 音声/動画アップロードの PUT 時の `Content-Type` は、(1) `--content-type` 指定、
+  (2) 署名付き URL の `content-type` クエリパラメータ、(3) ファイル拡張子からの推定、
+  の優先順で決定します（S3 v2 署名の URL は Content-Type を署名に含むため、URL の指定に合わせます）。
 - `miitel_common.post_json()` は Bearer / BASIC 認証の両方に対応しています。

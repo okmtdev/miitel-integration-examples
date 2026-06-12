@@ -11,6 +11,7 @@ import json
 import mimetypes
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from dataclasses import dataclass
 from typing import Any, Mapping
@@ -139,6 +140,20 @@ def post_json(
     return _request("POST", url, data=body, headers=headers, timeout=timeout)
 
 
+def _content_type_from_url(url: str) -> str | None:
+    """署名付き URL の `content-type` クエリパラメータを返す (なければ None)。
+
+    一部の署名付き URL (S3 v2 署名など) は Content-Type を署名に含むため、
+    URL が指定する Content-Type と一致させないと SignatureDoesNotMatch になる。
+    """
+    query = urllib.parse.parse_qs(urllib.parse.urlsplit(url).query)
+    for key in ("content-type", "Content-Type"):
+        values = query.get(key)
+        if values:
+            return values[0]
+    return None
+
+
 def put_file(
     url: str,
     file_path: str,
@@ -148,13 +163,19 @@ def put_file(
 ) -> HttpResponse:
     """事前署名済み URL などにファイルをバイナリ PUT する。
 
-    MiiTel が返す URL は署名付きのため、署名対象外のヘッダーを足すと 403 に
-    なり得る。公式チュートリアルに倣い、既定では Content-Type を付けない。
-    必要な場合のみ `content_type` を明示する。
+    Content-Type は次の優先順で決定する:
+      1. 引数 `content_type`
+      2. 署名付き URL の `content-type` クエリパラメータ (S3 v2 署名等で必須)
+      3. ファイル拡張子からの推定
+
+    urllib は data 付きリクエストで Content-Type 未指定だと
+    `application/x-www-form-urlencoded` を自動付与してしまい、Content-Type を
+    署名に含む URL では 403 になる。そのため常に明示的に設定する。
     """
     with open(file_path, "rb") as f:
         data = f.read()
-    headers = {"Content-Type": content_type} if content_type else {}
+    resolved = content_type or _content_type_from_url(url) or guess_content_type(file_path)
+    headers = {"Content-Type": resolved}
     return _request("PUT", url, data=data, headers=headers, timeout=timeout)
 
 
