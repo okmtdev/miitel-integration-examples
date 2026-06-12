@@ -1,0 +1,24 @@
+{
+  "video_data": [
+    {
+      "video_data_id": "test_video_id",
+      "video_file_type": "mp4",
+      "title": "サンプル商談",
+      "started_at": "2026-06-12T03:41:48+00:00",
+      "ended_at": "2026-06-12T04:10:34+00:00",
+      "participants": [
+        {
+          "miitel_user_id": "9b1d82f5-9845-4158-9c7b-75e7c235d8e7",
+          "name": "RevComm太郎",
+          "email": "taro@example.com"
+        },
+        {
+          "miitel_user_id": null,
+          "name": "顧客 花子",
+          "email": "hanako@example.com"
+        }
+      ],
+      "tags": []
+    }
+  ]
+}
