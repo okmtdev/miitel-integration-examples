@@ -31,7 +31,8 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument(
         "--base-url",
-        default=os.environ.get("MIITEL_AUTH_BASE_URL", "https://account.miitel.com"),
+        default=os.environ.get("MIITEL_AUTH_BASE_URL", "https://account.miiteldevelopment.net"),
+        #default=os.environ.get("MIITEL_AUTH_BASE_URL", "https://account.miitel.com"),
         help="認証基盤のベース URL (既定: https://account.miitel.com)。環境変数 MIITEL_AUTH_BASE_URL。",
     )
     parser.add_argument(

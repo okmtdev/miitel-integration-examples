@@ -41,6 +41,7 @@ Incoming Webhook は 2 段階のフローで動きます。
 ```bash
 # MiiTel Phone 用（トークンは不要）
 export MIITEL_IW_WEBHOOK_URL="https://（Admin で発行した Webhook URL）"
+export MIITEL_USER_ID="{取得したユーザーID}"
 
 # MiiTel Meetings / Video 用
 export MIITEL_VIDEO_IW_WEBHOOK_URL="https://（発行された Webhook URL）"
@@ -59,21 +60,16 @@ cd incoming-webhook/python
 # まずは送信内容だけ確認（送信しない）
 python3 phone_incoming_webhook.py \
     --metadata samples/phone_call_data.json \
-    --audio test_id=./recording.mp3 \
+    --audio call_data=./samples/sample.mp3 \
+    --miitel-user-id "$MIITEL_USER_ID" \
     --dry-run
 
 # 実際に送信（メタデータ POST → 音声 PUT）
 python3 phone_incoming_webhook.py \
     --webhook-url "$MIITEL_IW_WEBHOOK_URL" \
     --metadata samples/phone_call_data.json \
-    --audio test_id=./recording.mp3
-
-# miitel_user_id を JSON を編集せず CLI から差し込む
-python3 phone_incoming_webhook.py \
-    --webhook-url "$MIITEL_IW_WEBHOOK_URL" \
-    --metadata samples/phone_call_data.json \
-    --audio test_id=./recording.mp3 \
-    --miitel-user-id "コピーした-UUID"
+    --audio call_data=./samples/sample.mp3 \
+    --miitel-user-id "$MIITEL_USER_ID"
 ```
 
 - `--audio call_data_id=PATH` は複数指定できます（call_data ごとに音声を対応付け）。
@@ -122,14 +118,15 @@ cd incoming-webhook/python
 # 送信内容の確認
 python3 video_incoming_webhook.py \
     --metadata samples/video_data.json \
-    --media ./meeting.mp4 \
+    --media ./samples/sample.mp4 \
+    --miitel-user-id "$MIITEL_USER_ID" \
     --dry-run
 
 # 実際に送信（メタデータ POST → 動画 PUT）
 python3 video_incoming_webhook.py \
     --webhook-url "$MIITEL_VIDEO_IW_WEBHOOK_URL" \
     --metadata samples/video_data.json \
-    --media ./meeting.mp4 \
+    --media ./samples/sample.mp4 \
     --miitel-user-id "$MIITEL_USER_ID"
 ```
 
