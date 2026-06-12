@@ -210,18 +210,38 @@ def main(argv: list[str] | None = None) -> int:
 
     # 2. 音声ファイルをアップロード URL へ PUT する。
     exit_code = 0
+    uploaded = 0
     for call_data_id, url in upload_urls.items():
         path = audio_files.get(call_data_id)
         if not path:
-            print(f"[skip] call_data_id={call_data_id} に対応する音声ファイル未指定。")
+            print(
+                f"[skip] call_data_id={call_data_id!r} に対応する音声ファイルが "
+                f"--audio で指定されていません。",
+                file=sys.stderr,
+            )
+            if audio_files:
+                print(
+                    f"       --audio のキー {list(audio_files)} と "
+                    f"JSON の call_data_id を一致させてください。",
+                    file=sys.stderr,
+                )
+            exit_code = 1
             continue
         print(f"音声をアップロード中: {call_data_id} <- {path}")
         try:
             put_resp = miitel_common.put_file(url, path, content_type=args.content_type)
             print(f"  完了 (HTTP {put_resp.status})")
+            uploaded += 1
         except (miitel_common.HttpError, OSError) as exc:
             print(f"  アップロード失敗: {exc}", file=sys.stderr)
             exit_code = 1
+
+    if uploaded == 0:
+        print(
+            "音声を 1 件もアップロードできませんでした。"
+            "通話履歴は作成されていますが音声は未登録の状態です。",
+            file=sys.stderr,
+        )
 
     return exit_code
 
