@@ -7,9 +7,9 @@ Incoming Webhook は 2 段階で外部の通話録音を MiiTel に取り込む�
      MiiTel が通話履歴を生成し、音声アップロード用の URL を返す。
   2. 返された URL に音声ファイルをバイナリで PUT する。
 
-Webhook URL / 認証トークンは MiiTel CS から払い出される値を使う。
-本スクリプトはメタデータを JSON ファイルから読み込むだけなので、
-正確なフィールド仕様は公式リファレンスに従って JSON を用意すればよい。
+Webhook URL は MiiTel Admin で発行した値を使う (URL 自体が資格情報のため、
+Webhook POST に認証ヘッダーは不要)。本スクリプトはメタデータを JSON ファイルから
+読み込むだけなので、正確なフィールド仕様は公式リファレンスに従って JSON を用意する。
 
   仕様: https://developers.miitel.com/docs/incoming-webhook-getting-started
   API : https://developers.miitel.com/reference/call__webhook_call_creation
@@ -17,7 +17,6 @@ Webhook URL / 認証トークンは MiiTel CS から払い出される値を使�
 実行例:
   python phone_incoming_webhook.py \
       --webhook-url "$MIITEL_IW_WEBHOOK_URL" \
-      --token "$MIITEL_IW_TOKEN" \
       --metadata samples/phone_call_data.json \
       --audio test_id=./recording.mp3
 """
@@ -46,10 +45,27 @@ def _parse_audio_args(pairs: list[str]) -> dict[str, str]:
     return mapping
 
 
+def _url_from(value: Any) -> str | None:
+    """URL 文字列、または {"url": ...} 形式の dict から URL を取り出す。"""
+    if isinstance(value, str):
+        return value
+    if isinstance(value, dict):
+        return value.get("url") or value.get("audio_upload_url")
+    return None
+
+
 def _extract_upload_urls(response_json: Any) -> dict[str, str]:
     """POST レスポンスから call_data_id -> アップロード URL の対応を取り出す。
 
-    MiiTel のレスポンス構造の揺れ (list / dict、キー名) を吸収する。
+    公式レスポンスは以下の形 (audio_upload_urls はリスト、各要素は
+    call_data_id をキーに持つ dict)。
+
+        {"audio_upload_urls": [
+            {"<call_data_id>": {"url": "...", "call_id": "...", ...}}
+        ]}
+
+    list が dict のフラット形 ({"call_data_id": ..., "url": ...}) や、
+    audio_upload_urls 自体が dict の場合も保険的に吸収する。
     """
     if not isinstance(response_json, dict):
         return {}
@@ -57,23 +73,25 @@ def _extract_upload_urls(response_json: Any) -> dict[str, str]:
     raw = response_json.get("audio_upload_urls", response_json.get("upload_urls"))
     result: dict[str, str] = {}
 
-    if isinstance(raw, dict):
-        # {"<call_data_id>": "<url>"} もしくは {"<call_data_id>": {"audio_upload_url": ...}}
-        for call_data_id, value in raw.items():
-            if isinstance(value, str):
-                result[call_data_id] = value
-            elif isinstance(value, dict):
-                url = value.get("audio_upload_url") or value.get("url")
-                if url:
-                    result[call_data_id] = url
-    elif isinstance(raw, list):
-        # [{"call_data_id": ..., "audio_upload_url": ...}, ...]
+    if isinstance(raw, list):
         for item in raw:
             if not isinstance(item, dict):
                 continue
-            call_data_id = item.get("call_data_id")
-            url = item.get("audio_upload_url") or item.get("url")
-            if call_data_id and url:
+            # フラット形: {"call_data_id": id, "url": url}
+            if "call_data_id" in item and ("url" in item or "audio_upload_url" in item):
+                url = _url_from(item)
+                if url:
+                    result[str(item["call_data_id"])] = url
+                continue
+            # 公式形: {"<call_data_id>": {"url": ...}}
+            for call_data_id, value in item.items():
+                url = _url_from(value)
+                if url:
+                    result[call_data_id] = url
+    elif isinstance(raw, dict):
+        for call_data_id, value in raw.items():
+            url = _url_from(value)
+            if url:
                 result[call_data_id] = url
 
     return result
@@ -102,6 +120,11 @@ def main(argv: list[str] | None = None) -> int:
         default=[],
         metavar="call_data_id=PATH",
         help="アップロードする音声ファイル。複数指定可。",
+    )
+    parser.add_argument(
+        "--content-type",
+        default=None,
+        help="PUT 時の Content-Type。既定では付けない (署名付き URL のため)。",
     )
     parser.add_argument(
         "--dry-run",
@@ -157,7 +180,7 @@ def main(argv: list[str] | None = None) -> int:
             continue
         print(f"音声をアップロード中: {call_data_id} <- {path}")
         try:
-            put_resp = miitel_common.put_file(url, path)
+            put_resp = miitel_common.put_file(url, path, content_type=args.content_type)
             print(f"  完了 (HTTP {put_resp.status})")
         except (miitel_common.HttpError, OSError) as exc:
             print(f"  アップロード失敗: {exc}", file=sys.stderr)

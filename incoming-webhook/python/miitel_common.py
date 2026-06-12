@@ -146,10 +146,15 @@ def put_file(
     content_type: str | None = None,
     timeout: float = 300.0,
 ) -> HttpResponse:
-    """事前署名済み URL などにファイルをバイナリ PUT する。"""
+    """事前署名済み URL などにファイルをバイナリ PUT する。
+
+    MiiTel が返す URL は署名付きのため、署名対象外のヘッダーを足すと 403 に
+    なり得る。公式チュートリアルに倣い、既定では Content-Type を付けない。
+    必要な場合のみ `content_type` を明示する。
+    """
     with open(file_path, "rb") as f:
         data = f.read()
-    headers = {"Content-Type": content_type or guess_content_type(file_path)}
+    headers = {"Content-Type": content_type} if content_type else {}
     return _request("PUT", url, data=data, headers=headers, timeout=timeout)
 
 
