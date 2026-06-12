@@ -65,13 +65,13 @@ python3 phone_incoming_webhook.py \
 # 実際に送信（メタデータ POST → 音声 PUT）
 python3 phone_incoming_webhook.py \
     --webhook-url "$MIITEL_IW_WEBHOOK_URL" \
-    --token "$MIITEL_IW_TOKEN" \
     --metadata samples/phone_call_data.json \
     --audio test_id=./recording.mp3
 ```
 
 - `--audio call_data_id=PATH` は複数指定できます（call_data ごとに音声を対応付け）。
-- `--webhook-url` / `--token` は環境変数を設定していれば省略可能です。
+- `--webhook-url` は環境変数 `MIITEL_IW_WEBHOOK_URL` を設定していれば省略可能です。
+- MP では認証トークンは不要ですが、必要な場合のみ `--token`（環境変数 `MIITEL_IW_TOKEN`）を指定できます。
 
 #### 主なメタデータ項目（`call_data[]`）
 

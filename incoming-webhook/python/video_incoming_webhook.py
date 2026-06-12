@@ -68,7 +68,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--webhook-url",
         default=os.environ.get("MIITEL_VIDEO_IW_WEBHOOK_URL"),
-        help="MiiTel CS から払い出された Video Incoming Webhook URL (環境変数 MIITEL_VIDEO_IW_WEBHOOK_URL)",
+        help="MiiTel Admin で発行した Video Incoming Webhook URL (環境変数 MIITEL_VIDEO_IW_WEBHOOK_URL)",
     )
     parser.add_argument(
         "--token",
