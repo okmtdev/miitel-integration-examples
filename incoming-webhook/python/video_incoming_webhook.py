@@ -19,7 +19,8 @@ Webhook URL は MiiTel Admin の [外部連携] > [Incoming Webhook] > [会議�
   python video_incoming_webhook.py \
       --webhook-url "$MIITEL_VIDEO_IW_WEBHOOK_URL" \
       --metadata samples/video_data.json \
-      --media ./meeting.mp4
+      --media ./meeting.mp4 \
+      --miitel-user-id "$MIITEL_USER_ID"
 """
 
 from __future__ import annotations
@@ -63,6 +64,29 @@ def _find_upload_url(obj: Any) -> str | None:
     return None
 
 
+def _override_miitel_user_id(metadata: Any, miitel_user_id: str) -> tuple[bool, int]:
+    """video_data.host と null でない participants[].miitel_user_id を上書きする。
+
+    サンプルの host はテナント外の UUID なので、テスト時は host も差し替える。
+    (host を上書きしたか, participant を上書きした件数) を返す。
+    """
+    host_replaced = False
+    count = 0
+    if not isinstance(metadata, dict):
+        return host_replaced, count
+    video_data = metadata.get("video_data")
+    if not isinstance(video_data, dict):
+        return host_replaced, count
+    if "host" in video_data:
+        video_data["host"] = miitel_user_id
+        host_replaced = True
+    for participant in video_data.get("participants", []) or []:
+        if isinstance(participant, dict) and participant.get("miitel_user_id") is not None:
+            participant["miitel_user_id"] = miitel_user_id
+            count += 1
+    return host_replaced, count
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument(
@@ -85,6 +109,14 @@ def main(argv: list[str] | None = None) -> int:
         help="アップロードする動画/音声ファイルのパス",
     )
     parser.add_argument(
+        "--miitel-user-id",
+        default=os.environ.get("MIITEL_USER_ID"),
+        help=(
+            "ユーザーの UUID。指定すると video_data.host と null でない "
+            "participants[].miitel_user_id をすべて上書きする (環境変数 MIITEL_USER_ID)。"
+        ),
+    )
+    parser.add_argument(
         "--upload-url-json-path",
         help=(
             "レスポンス内のアップロード URL の場所をドット区切りで明示指定する "
@@ -103,6 +135,15 @@ def main(argv: list[str] | None = None) -> int:
 
     with open(args.metadata, encoding="utf-8") as f:
         metadata = json.load(f)
+
+    if args.miitel_user_id:
+        host_replaced, replaced = _override_miitel_user_id(metadata, args.miitel_user_id)
+        targets = []
+        if host_replaced:
+            targets.append("host")
+        if replaced:
+            targets.append(f"participants {replaced} 件")
+        print("miitel_user_id を上書きしました: " + (", ".join(targets) or "対象なし"))
 
     if args.dry_run:
         print("== POST (dry-run) ==")

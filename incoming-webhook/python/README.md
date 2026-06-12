@@ -129,9 +129,13 @@ python3 video_incoming_webhook.py \
 python3 video_incoming_webhook.py \
     --webhook-url "$MIITEL_VIDEO_IW_WEBHOOK_URL" \
     --metadata samples/video_data.json \
-    --media ./meeting.mp4
+    --media ./meeting.mp4 \
+    --miitel-user-id "$MIITEL_USER_ID"
 ```
 
+- `--miitel-user-id`（環境変数 `MIITEL_USER_ID`）を指定すると、JSON を手編集せずに
+  **`video_data.host` と `null` でない `participants[].miitel_user_id` をすべて上書き**します。
+  サンプルの `host` はテナント外の UUID なので、テスト時は自分の UUID で差し替えてください。
 - レスポンス内のアップロード URL は自動探索しますが、見つからない場合は
   `--upload-url-json-path data.upload_url` のようにドット区切りで明示できます。
 
