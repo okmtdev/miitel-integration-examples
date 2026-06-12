@@ -151,3 +151,43 @@ def put_file(
         data = f.read()
     headers = {"Content-Type": content_type or guess_content_type(file_path)}
     return _request("PUT", url, data=data, headers=headers, timeout=timeout)
+
+
+# レスポンスからアクセストークンを探す際に候補となるキー名。
+_TOKEN_KEYS = ("access_token", "token", "accessToken")
+
+
+def authenticate(
+    base_url: str,
+    credentials: Mapping[str, Any],
+    *,
+    path: str = "/api/auth/v2/authenticate",
+    timeout: float = 60.0,
+) -> str:
+    """MiiTel Open API の認証エンドポイントへ POST してアクセストークンを返す。
+
+    `base_url` はテナントのベース URL (例: https://example.miitel.jp)。
+    `credentials` は MiiTel Admin で発行した API 認証情報をそのまま渡す
+    (例: {"company_id": ..., "access_key": ..., "access_secret": ...})。
+    正確なフィールド名は公式リファレンスに従って `credentials` を用意すればよい。
+
+    リファレンス: https://developers.miitel.com/reference/auth__authentication
+    """
+    url = base_url.rstrip("/") + path
+    resp = post_json(url, dict(credentials), timeout=timeout)
+    data = resp.json()
+    if isinstance(data, dict):
+        for key in _TOKEN_KEYS:
+            value = data.get(key)
+            if isinstance(value, str) and value:
+                return value
+        # ネストしている場合 (例: {"data": {"access_token": ...}}) も探す。
+        for value in data.values():
+            if isinstance(value, dict):
+                for key in _TOKEN_KEYS:
+                    nested = value.get(key)
+                    if isinstance(nested, str) and nested:
+                        return nested
+    raise RuntimeError(
+        "認証レスポンスからアクセストークンを取得できませんでした: " + resp.text()
+    )

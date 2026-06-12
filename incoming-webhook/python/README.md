@@ -25,19 +25,47 @@ Incoming Webhook は 2 段階のフローで動きます。
 ## 事前準備
 
 1. Incoming Webhook の有効化を **MiiTel CS チーム**に依頼します。
-2. 払い出された **Webhook URL** と **認証トークン**を控えます。
-   （Webhook URL はテナントごとに発行されるため、本サンプルでは URL を引数 / 環境変数で渡します。）
+2. MiiTel Admin で **Webhook URL** を確認します（テナントごとに発行）。
+3. MiiTel Admin で **API 認証情報**（`access_key` / `access_secret` など）を発行します。
+4. 取り込んだ通話/会議を紐付ける **MiiTel ユーザー ID（UUID）** を MiiTel Admin で確認します
+   （メタデータの `participants[].miitel_user_id` に指定。Incoming Webhook 権限を持つ
+   ユーザーである必要があります）。
 
-環境変数で渡す場合:
+### 認証（アクセストークンの取得）
+
+Incoming Webhook の `Authorization: Bearer <token>` に使うトークンは、ログイン
+パスワードではなく **MiiTel Open API の認証エンドポイント**から取得します。
+
+```
+POST https://{テナント}.miitel.jp/api/auth/v2/authenticate
+```
+
+参考: [認証 API リファレンス](https://developers.miitel.com/reference/auth__authentication)
+
+`authenticate.py` で API 認証情報（`samples/auth_credentials.json`）からトークンを取得できます。
+
+```bash
+cd incoming-webhook/python
+
+export MIITEL_IW_TOKEN="$(python3 authenticate.py \
+    --base-url https://example.miitel.jp \
+    --credentials samples/auth_credentials.json)"
+```
+
+> **注意:** `auth_credentials.json` のフィールド名はサンプルです。正確な項目は
+> 上記の認証 API リファレンスに合わせて調整してください
+> （`authenticate.py` は JSON の内容をそのまま送信します）。
+
+### 環境変数
 
 ```bash
 # MiiTel Phone 用
-export MIITEL_IW_WEBHOOK_URL="https://（CS から払い出された URL）"
-export MIITEL_IW_TOKEN="（認証トークン）"
+export MIITEL_IW_WEBHOOK_URL="https://（Admin で確認した Webhook URL）"
+export MIITEL_IW_TOKEN="（authenticate.py で取得したトークン）"
 
 # MiiTel Meetings / Video 用
-export MIITEL_VIDEO_IW_WEBHOOK_URL="https://（CS から払い出された URL）"
-export MIITEL_VIDEO_IW_TOKEN="（認証トークン）"
+export MIITEL_VIDEO_IW_WEBHOOK_URL="https://（Admin で確認した Webhook URL）"
+export MIITEL_VIDEO_IW_TOKEN="（authenticate.py で取得したトークン）"
 ```
 
 ## 使い方
@@ -112,9 +140,11 @@ python3 video_incoming_webhook.py \
 incoming-webhook/python/
 ├── README.md                    # このファイル
 ├── miitel_common.py             # 共通 HTTP ヘルパー (urllib ラッパー / 認証 / リトライ)
+├── authenticate.py              # アクセストークン取得 CLI
 ├── phone_incoming_webhook.py    # MiiTel Phone (MP) クライアント
 ├── video_incoming_webhook.py    # MiiTel Meetings / Video (MM) クライアント
 └── samples/
+    ├── auth_credentials.json    # API 認証情報のサンプル
     ├── phone_call_data.json     # MP メタデータのサンプル
     └── video_data.json          # MM メタデータのサンプル
 ```
