@@ -26,35 +26,41 @@ Incoming Webhook は 2 段階のフローで動きます。
 
 1. Incoming Webhook の有効化を **MiiTel CS チーム**に依頼します。
 2. MiiTel Admin で **Webhook URL** を確認します（テナントごとに発行）。
-3. MiiTel Admin で **API 認証情報**（`access_key` / `access_secret` など）を発行します。
-4. 取り込んだ通話/会議を紐付ける **MiiTel ユーザー ID（UUID）** を MiiTel Admin で確認します
+3. 取り込んだ通話/会議を紐付ける **MiiTel ユーザー ID（UUID）** を MiiTel Admin で確認します
    （メタデータの `participants[].miitel_user_id` に指定。Incoming Webhook 権限を持つ
    ユーザーである必要があります）。
 
 ### 認証（アクセストークンの取得）
 
-Incoming Webhook の `Authorization: Bearer <token>` に使うトークンは、ログイン
-パスワードではなく **MiiTel Open API の認証エンドポイント**から取得します。
+Incoming Webhook の `Authorization: Bearer <token>` に使うトークンは、
+**MiiTel Account の認証エンドポイント**から取得します。
 
 ```
-POST https://{テナント}.miitel.jp/api/auth/v2/authenticate
+POST https://account.miitel.com/auth/v1/authenticate
 ```
 
 参考: [認証 API リファレンス](https://developers.miitel.com/reference/auth__authentication)
 
-`authenticate.py` で API 認証情報（`samples/auth_credentials.json`）からトークンを取得できます。
+リクエストボディは認証フロー `flow` と認証パラメータ `params` で構成します。
+
+- `flow: "USER_PASSWORD"` … `params` に `email`（ログイン ID）と `password`
+- `flow: "REFRESH_TOKEN"` … `params` に `refresh_token`
+- `params.client_id` は省略可能
+
+`authenticate.py` で認証ボディ（`samples/auth_credentials.json`）からトークンを取得できます。
 
 ```bash
 cd incoming-webhook/python
 
+# email / password でトークンを取得して環境変数へ
 export MIITEL_IW_TOKEN="$(python3 authenticate.py \
-    --base-url https://example.miitel.jp \
     --credentials samples/auth_credentials.json)"
+
+# リフレッシュトークンから更新する場合
+#   python3 authenticate.py --credentials samples/auth_credentials_refresh.json
 ```
 
-> **注意:** `auth_credentials.json` のフィールド名はサンプルです。正確な項目は
-> 上記の認証 API リファレンスに合わせて調整してください
-> （`authenticate.py` は JSON の内容をそのまま送信します）。
+`--base-url` は既定で `https://account.miitel.com` です。
 
 ### 環境変数
 
@@ -144,9 +150,10 @@ incoming-webhook/python/
 ├── phone_incoming_webhook.py    # MiiTel Phone (MP) クライアント
 ├── video_incoming_webhook.py    # MiiTel Meetings / Video (MM) クライアント
 └── samples/
-    ├── auth_credentials.json    # API 認証情報のサンプル
-    ├── phone_call_data.json     # MP メタデータのサンプル
-    └── video_data.json          # MM メタデータのサンプル
+    ├── auth_credentials.json         # 認証ボディのサンプル (USER_PASSWORD)
+    ├── auth_credentials_refresh.json # 認証ボディのサンプル (REFRESH_TOKEN)
+    ├── phone_call_data.json          # MP メタデータのサンプル
+    └── video_data.json               # MM メタデータのサンプル
 ```
 
 ## 補足

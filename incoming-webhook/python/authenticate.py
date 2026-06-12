@@ -1,20 +1,19 @@
 #!/usr/bin/env python3
-"""MiiTel Open API のアクセストークンを取得する (標準ライブラリのみ)。
+"""MiiTel Account のアクセストークンを取得する (標準ライブラリのみ)。
 
 Incoming Webhook の `Authorization: Bearer <token>` に使うアクセストークンは、
-MiiTel Admin で発行した API 認証情報を使い、認証エンドポイントから取得する。
+MiiTel Account の認証エンドポイントから取得する。
 
-  POST https://{テナント}.miitel.jp/api/auth/v2/authenticate
+  POST https://account.miitel.com/auth/v1/authenticate
 
   リファレンス: https://developers.miitel.com/reference/auth__authentication
 
-認証情報 (company_id / access_key / access_secret など) は JSON ファイルから
-読み込むため、正確なフィールド名は公式リファレンスに従って JSON を用意すればよい。
+認証ボディ (flow / params) は JSON ファイルから読み込む。
+`flow` は `USER_PASSWORD` (email / password) か `REFRESH_TOKEN` を指定する。
 
 実行例:
   # 取得したトークンを環境変数へ
   export MIITEL_IW_TOKEN="$(python3 authenticate.py \
-      --base-url https://example.miitel.jp \
       --credentials samples/auth_credentials.json)"
 """
 
@@ -32,18 +31,15 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument(
         "--base-url",
-        default=os.environ.get("MIITEL_BASE_URL"),
-        help="テナントのベース URL (例: https://example.miitel.jp)。環境変数 MIITEL_BASE_URL。",
+        default=os.environ.get("MIITEL_AUTH_BASE_URL", "https://account.miitel.com"),
+        help="認証基盤のベース URL (既定: https://account.miitel.com)。環境変数 MIITEL_AUTH_BASE_URL。",
     )
     parser.add_argument(
         "--credentials",
         required=True,
-        help="API 認証情報の JSON ファイル (MiiTel Admin で発行した値)",
+        help="認証ボディ (flow / params) の JSON ファイル",
     )
     args = parser.parse_args(argv)
-
-    if not args.base_url:
-        parser.error("--base-url か環境変数 MIITEL_BASE_URL が必要です。")
 
     with open(args.credentials, encoding="utf-8") as f:
         credentials = json.load(f)

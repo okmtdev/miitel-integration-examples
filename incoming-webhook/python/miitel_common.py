@@ -161,15 +161,19 @@ def authenticate(
     base_url: str,
     credentials: Mapping[str, Any],
     *,
-    path: str = "/api/auth/v2/authenticate",
+    path: str = "/auth/v1/authenticate",
     timeout: float = 60.0,
 ) -> str:
-    """MiiTel Open API の認証エンドポイントへ POST してアクセストークンを返す。
+    """MiiTel Account の認証エンドポイントへ POST してアクセストークンを返す。
 
-    `base_url` はテナントのベース URL (例: https://example.miitel.jp)。
-    `credentials` は MiiTel Admin で発行した API 認証情報をそのまま渡す
-    (例: {"company_id": ..., "access_key": ..., "access_secret": ...})。
-    正確なフィールド名は公式リファレンスに従って `credentials` を用意すればよい。
+    `base_url` は認証基盤の URL (通常 https://account.miitel.com)。
+    `credentials` は認証フローと認証パラメータをそのまま渡す。例:
+
+        {"flow": "USER_PASSWORD",
+         "params": {"email": "you@example.com", "password": "..."}}
+
+    `flow` は `USER_PASSWORD` (email / password) か `REFRESH_TOKEN`
+    (refresh_token) を指定できる。`params.client_id` は省略可能。
 
     リファレンス: https://developers.miitel.com/reference/auth__authentication
     """
