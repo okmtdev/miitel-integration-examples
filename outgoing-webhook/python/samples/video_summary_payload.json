@@ -1,0 +1,48 @@
+{
+  "video": {
+    "id": "018c23a4-c0b1-45c9-a9b6-e53c1b0a91a8",
+    "tenant_code": "revcomm-test",
+    "title": "46c1897e-6dab-4beb-ac6a-5861cbaa6d1f",
+    "platform": "user_uploads",
+    "starts_at": "2023-12-01T04:30:00+00:00",
+    "ends_at": "2023-12-01T04:30:02.580000+00:00",
+    "access_permission": "EVERYONE",
+    "host": {
+      "user_name": "田中 太郎",
+      "login_id": "tanaka@example.com"
+    },
+    "zoom_meeting": {
+      "id": "91615380703",
+      "uuid": "HMZmQgWRSYay8t+5HZKtPw=="
+    },
+    "analysis": {
+      "overlap_count": null,
+      "silence_count": null
+    },
+    "participants": [
+      {
+        "id": "018c23a4-c353-3a72-4292-036067735557",
+        "display_name": "田中 太郎",
+        "miitel_user_name": "田中 太郎",
+        "login_id": "tanaka@example.com"
+      }
+    ],
+    "summary": {
+      "template_type": "section",
+      "raw": "**会議情報**\n- 会議タイトル: Meeting title\n- 会議日時: 2023-12-01 (金) 13:30\n- 会議の長さ: 0:02\n- 参加者: 田中 太郎"
+    },
+    "calendar_participants": [
+      {
+        "name": "田中 太郎",
+        "email": "tanaka@example.com",
+        "is_organizer": true,
+        "status": "accepted"
+      }
+    ],
+    "metadata": {
+      "external": {
+        "user_upload_device": "iPhone"
+      }
+    }
+  }
+}

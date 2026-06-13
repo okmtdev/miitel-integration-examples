@@ -11,6 +11,12 @@ MiiTel の Incoming Webhook / Outgoing Webhook / ThirdParty 系拡張機能の
 
 - [Python](./incoming-webhook/python/) — MiiTel Phone (MP) / MiiTel Meetings (MM) 両対応。標準ライブラリのみ。
 
+### Outgoing Webhook
+
+MiiTel が送信する通話履歴などを受信する Webhook サーバーのサンプルです。
+
+- [Python](./outgoing-webhook/python/) — 通話履歴の受信（Challenge-Response / 重複排除対応）。標準ライブラリのみ。
+
 ## 参考
 
 - [MiiTel Developers](https://developers.miitel.com/)
