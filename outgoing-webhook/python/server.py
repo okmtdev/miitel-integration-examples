@@ -28,6 +28,7 @@ import argparse
 import json
 import os
 import sys
+import traceback
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import miitel_outgoing as ow
@@ -45,12 +46,19 @@ class WebhookHandler(BaseHTTPRequestHandler):
     save_dir: str | None = None
 
     def _send(self, status: int, body: bytes = b"", content_type: str = "application/json; charset=utf-8") -> None:
-        self.send_response(status)
-        self.send_header("Content-Type", content_type)
-        self.send_header("Content-Length", str(len(body)))
-        self.end_headers()
-        if body:
-            self.wfile.write(body)
+        # エラー時は keep-alive を切る (本文未読などでストリームが不整合になり得るため)。
+        if status >= 400:
+            self.close_connection = True
+        try:
+            self.send_response(status)
+            self.send_header("Content-Type", content_type)
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            if body:
+                self.wfile.write(body)
+        except (BrokenPipeError, ConnectionError, OSError) as exc:
+            # 応答書き込み中に接続が切れてもハンドラスレッドを落とさない。
+            self.log_message("response write failed: %s", exc)
 
     def do_GET(self) -> None:
         # 死活監視用。
@@ -60,8 +68,21 @@ class WebhookHandler(BaseHTTPRequestHandler):
             self._send(404, b'{"error":"not found"}')
 
     def do_POST(self) -> None:
-        length = int(self.headers.get("Content-Length") or 0)
-        raw = self.rfile.read(length) if length > 0 else b""
+        # Content-Length を安全にパースする (不正値で落とさない)。
+        try:
+            length = int(self.headers.get("Content-Length") or 0)
+        except ValueError:
+            self._send(400, b'{"error":"invalid content-length"}')
+            return
+        if length < 0:
+            length = 0
+
+        # 本文を読む。接続断時は応答できないので静かに終了する。
+        try:
+            raw = self.rfile.read(length) if length > 0 else b""
+        except (ConnectionError, OSError) as exc:
+            self.log_message("request read failed: %s", exc)
+            return
 
         # 任意の認証検証 (MiiTel の「追加ヘッダー」を設定した場合)。
         if self.expected_auth is not None:
@@ -83,6 +104,19 @@ class WebhookHandler(BaseHTTPRequestHandler):
             return
 
         # 2. 通常の Webhook イベント (通話履歴 call / 会議履歴 video)。
+        #    保存や重複排除でファイル I/O 例外が出ても応答を返す
+        #    (応答せずスレッドが落ちると MiiTel の再送ループを招くため)。
+        try:
+            self._handle_event(payload, raw)
+        except Exception:  # noqa: BLE001 - サンプルとして握りつぶし 500 で再送に委ねる
+            self.log_message("event handling failed:\n%s", traceback.format_exc())
+            self._send(500, b'{"error":"internal"}')
+            return
+
+        # 正常時は 200 を返す。
+        self._send(200, b'{"status":"received"}')
+
+    def _handle_event(self, payload: object, raw: bytes) -> None:
         ids = ow.dedupe_ids(payload)
         if self.dedupe is not None:
             new_ids, dup_ids = self.dedupe.filter_new(ids)
@@ -95,9 +129,6 @@ class WebhookHandler(BaseHTTPRequestHandler):
         if self.save_dir and new_ids:
             saved = ow.save_payload(self.save_dir, payload, raw)
             print(f"  保存: {saved}", flush=True)
-
-        # MiiTel には常に 200 を返す (再送ループを避ける)。
-        self._send(200, b'{"status":"received"}')
 
     def log_message(self, fmt: str, *args: object) -> None:
         sys.stderr.write("%s - - %s\n" % (self.address_string(), fmt % args))

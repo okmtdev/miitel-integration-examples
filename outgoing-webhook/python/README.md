@@ -101,6 +101,9 @@ python3 send_sample.py --payload samples/video_summary_payload.json
 
 # もう一度同じものを送ると重複として検出される
 python3 send_sample.py --payload samples/transcription_payload.json
+
+# 認証ヘッダーを検証する構成 (--auth-value 付きで起動した場合) の確認
+python3 send_sample.py --auth-value "Bearer ACCESSTOKEN" --payload samples/transcription_payload.json
 ```
 
 curl でも確認できます:
@@ -111,6 +114,10 @@ curl -i -X POST http://127.0.0.1:8080/ \
   --data @samples/challenge_payload.json
 # => 200 / Content-Type: text/plain / body は hex_token のみ
 ```
+
+> **NOTE:** challenge や通常イベントのペイロードには、MiiTel 側で設定した**追加ペイロード
+> （例 `params_key`）など想定外のフィールドが含まれることがあります**が、無視して問題ありません
+> （本サーバーは必要なフィールドのみを参照します）。
 
 ### 3. ngrok でローカルサーバーを公開する（手元で MiiTel から受ける）
 
@@ -182,9 +189,13 @@ outgoing-webhook/python/
 
 ## 補足（正直ベース）
 
-- 本サーバーは MiiTel には常に `200` を返します（再送ループを避けるため）。受信後の処理を
-  非同期化したい場合は `do_POST` 内の処理をキュー投入などに置き換えてください。
+- レスポンスの方針: 正常受信・challenge は `200`、本文が不正（Content-Length / JSON）なら `400`、
+  受信後の処理（保存・重複排除など）で想定外の例外が出た場合は `500` を返します。`500`/無応答は
+  MiiTel 側の再送対象になるため、取りこぼしを避けられます。重い処理はキュー投入などで非同期化し、
+  受信ハンドラは速やかに返すのが安全です。
 - 受信内容は `miitel_outgoing.summarize()` で要約表示します（通話履歴 `call` / 会議履歴 `video` 自動判別）。
   業務で使うフィールドに合わせて適宜拡張してください。
+- 本番運用では `print` ではなく Python の `logging` モジュールでの記録を推奨します。
+- タイムスタンプは ISO 8601・UTC（`+00:00`）です。パースは `datetime.fromisoformat()` が利用できます。
 - `speech_recognition.summary`（要約文）は 2025-06-19 以降、非表示（空文字列 `""`）です。
   会議履歴の AI 要約は「議事録作成完了時」に別階層の `summary`（`template_type` / `raw`）で届きます。
