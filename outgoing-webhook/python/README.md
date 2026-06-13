@@ -100,12 +100,46 @@ curl -i -X POST http://127.0.0.1:8080/ \
 # => 200 / Content-Type: text/plain / body は hex_token のみ
 ```
 
-### 3. MiiTel Admin に登録する
+### 3. ngrok でローカルサーバーを公開する（手元で MiiTel から受ける）
+
+MiiTel はインターネットから到達できる URL にしか送信できません。手元の PC で動かす
+サーバーを MiiTel に受けさせるには、[ngrok](https://ngrok.com/) などのトンネルで公開します。
+
+```bash
+# 1) サーバーを起動（例: ポート 8080）
+python3 server.py --port 8080
+
+# 2) 別ターミナルで ngrok を起動し、同じポートを公開する
+ngrok http 8080
+```
+
+ngrok が表示する転送先 URL（例: `https://xxxx-xxxx.ngrok-free.app`）を控えます。
+この URL が、次の手順で MiiTel Admin に設定する Webhook URL です。
+
+```
+Forwarding  https://xxxx-xxxx.ngrok-free.app -> http://localhost:8080
+```
+
+動作確認:
+
+```bash
+# 公開 URL に対して疎通確認（別ターミナル）
+curl -i https://xxxx-xxxx.ngrok-free.app/health
+# Challenge-Response も公開 URL 経由で試せる
+python3 send_sample.py --url https://xxxx-xxxx.ngrok-free.app/ --payload samples/challenge_payload.json
+```
+
+> **NOTE:**
+> - ngrok の無料プランでは起動のたびに URL が変わります。URL を変えたら MiiTel Admin の設定も更新してください。
+> - `https://` の URL を使ってください。
+> - ngrok の Web インスペクタ（既定 http://127.0.0.1:4040）で、MiiTel から届いた
+>   生のリクエスト/レスポンスを確認でき、Challenge-Response のデバッグに便利です。
+
+### 4. MiiTel Admin に登録する
 
 1. https://account.miitel.jp/v1/signin に管理者権限でログイン → MiiTel Admin
 2. [外部連携] > [Outgoing Webhook] > [通話履歴連携設定を追加]
-3. **URL** に本サーバーの公開 URL を設定（インターネットから到達可能である必要があります。
-   ローカル検証時は ngrok 等のトンネルを利用してください）
+3. **URL** に本サーバーの公開 URL を設定（ローカル検証時は上記 ngrok の転送先 URL）
 4. 必要に応じて **追加ヘッダー**（例 `{"Authorization":"Bearer ACCESSTOKEN"}`）を設定し、
    サーバー側は `--auth-value "Bearer ACCESSTOKEN"` で一致させる
 5. **通知ルール**を選び [保存] → このとき Challenge-Response が実行されます
