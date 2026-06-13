@@ -28,8 +28,11 @@ def extract_challenge(payload: Any) -> str | None:
     return None
 
 
-def detail_ids(payload: Any) -> list[str]:
-    """ペイロードから call.details[].id を取り出す (冪等性キーに使う)。"""
+def dedupe_ids(payload: Any) -> list[str]:
+    """冪等性キーに使う ID を取り出す。
+
+    通話履歴 (call) は details[].id、会議履歴 (video) は video.id を使う。
+    """
     ids: list[str] = []
     if not isinstance(payload, dict):
         return ids
@@ -38,18 +41,26 @@ def detail_ids(payload: Any) -> list[str]:
         for detail in call.get("details", []) or []:
             if isinstance(detail, dict) and isinstance(detail.get("id"), str):
                 ids.append(detail["id"])
+    video = payload.get("video")
+    if isinstance(video, dict) and isinstance(video.get("id"), str):
+        ids.append(video["id"])
     return ids
 
 
 def summarize(payload: Any) -> str:
-    """通話履歴ペイロードを人が読める 1 件のサマリ文字列にする。"""
+    """ペイロードを人が読める 1 件のサマリ文字列にする (通話履歴 / 会議履歴 両対応)。"""
     if not isinstance(payload, dict):
         return "(JSON オブジェクトではないペイロード)"
-    call = payload.get("call")
-    if not isinstance(call, dict):
-        return "(call フィールドがありません)"
+    if isinstance(payload.get("call"), dict):
+        return _summarize_call(payload["call"])
+    if isinstance(payload.get("video"), dict):
+        return _summarize_video(payload["video"])
+    return "(call / video フィールドがありません)"
 
-    lines = [f"call.id={call.get('id')} tenant_code={call.get('tenant_code')}"]
+
+def _summarize_call(call: dict) -> str:
+    """通話履歴 (MiiTel Phone) のサマリ。"""
+    lines = [f"[通話履歴] call.id={call.get('id')} tenant_code={call.get('tenant_code')}"]
     for detail in call.get("details", []) or []:
         if not isinstance(detail, dict):
             continue
@@ -75,6 +86,34 @@ def summarize(payload: Any) -> str:
             f"参加者=[{', '.join(names)}]"
         )
     return "\n".join(lines)
+
+
+def _summarize_video(video: dict) -> str:
+    """会議履歴 (MiiTel Meetings) のサマリ。"""
+    # 文字起こし完了時は speech_recognition、議事録作成完了時は summary を含む。
+    kinds = []
+    if video.get("speech_recognition") is not None:
+        kinds.append("文字起こし")
+    if video.get("summary") is not None:
+        kinds.append("議事録")
+    kind = "/".join(kinds) or "イベント"
+
+    host = video.get("host") or {}
+    host_name = host.get("user_name") or host.get("login_id") or "-" if isinstance(host, dict) else "-"
+    participants = video.get("participants") or []
+    names = [
+        p.get("miitel_user_name") or p.get("display_name") or "-"
+        for p in participants
+        if isinstance(p, dict)
+    ]
+    return (
+        f"[会議履歴] [{kind}] video.id={video.get('id')} "
+        f"tenant_code={video.get('tenant_code')}\n"
+        f"  title={video.get('title')!r} platform={video.get('platform')} "
+        f"host={host_name}\n"
+        f"  starts_at={video.get('starts_at')} ends_at={video.get('ends_at')} "
+        f"参加者=[{', '.join(names)}]"
+    )
 
 
 class Dedupe:
@@ -118,10 +157,14 @@ class Dedupe:
 def save_payload(save_dir: str, payload: Any, raw: bytes) -> str:
     """生ペイロードを save_dir に保存し、保存先パスを返す。"""
     os.makedirs(save_dir, exist_ok=True)
-    call_id = "unknown"
-    if isinstance(payload, dict) and isinstance(payload.get("call"), dict):
-        call_id = payload["call"].get("id") or "unknown"
-    filename = f"{int(time.time() * 1000)}_{call_id}.json"
+    event_id = "unknown"
+    if isinstance(payload, dict):
+        for key in ("call", "video"):
+            obj = payload.get(key)
+            if isinstance(obj, dict) and obj.get("id"):
+                event_id = obj["id"]
+                break
+    filename = f"{int(time.time() * 1000)}_{event_id}.json"
     path = os.path.join(save_dir, filename)
     with open(path, "wb") as f:
         f.write(raw)

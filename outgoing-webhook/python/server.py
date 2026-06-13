@@ -82,8 +82,8 @@ class WebhookHandler(BaseHTTPRequestHandler):
             self._send(200, challenge.encode("utf-8"), content_type="text/plain")
             return
 
-        # 2. 通常の Webhook イベント。
-        ids = ow.detail_ids(payload)
+        # 2. 通常の Webhook イベント (通話履歴 call / 会議履歴 video)。
+        ids = ow.dedupe_ids(payload)
         if self.dedupe is not None:
             new_ids, dup_ids = self.dedupe.filter_new(ids)
         else:
@@ -91,7 +91,7 @@ class WebhookHandler(BaseHTTPRequestHandler):
 
         print(ow.summarize(payload), flush=True)
         if dup_ids:
-            print(f"  (重複 detail.id を {len(dup_ids)} 件検出: 再送とみなしスキップ)", flush=True)
+            print(f"  (重複 ID を {len(dup_ids)} 件検出: 再送とみなしスキップ)", flush=True)
         if self.save_dir and new_ids:
             saved = ow.save_payload(self.save_dir, payload, raw)
             print(f"  保存: {saved}", flush=True)
