@@ -151,7 +151,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--content-type",
         default=None,
-        help="PUT 時の Content-Type。既定では付けない (署名付き URL のため)。",
+        help="PUT 時の Content-Type を明示指定する。未指定時は署名付き URL の content-type "
+        "クエリ、なければ拡張子から自動決定する。",
     )
     parser.add_argument(
         "--dry-run",
