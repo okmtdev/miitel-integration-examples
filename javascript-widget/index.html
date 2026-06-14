@@ -80,7 +80,9 @@
     <button data-cmd="color" data-val="white">色: 白</button>
     <button data-cmd="color" data-val="black">色: 黒</button>
     <p class="note">
-      位置・色は読み込み時の <code>conf</code> でも指定できます (app.js のコメント参照)。
+      反映はソフトフォンを<strong>次に開いた時</strong>です（表示中は即時反映されないことがあります）。
+      <code>color</code> の既定は <strong>黒</strong>なので「黒」は見た目が変わりません（「白」で違いを確認）。
+      初期表示から効かせたい場合は読み込み時の <code>conf</code> で指定します (app.js のコメント参照)。
       ボタン/ロゴ画像は <code>openButtonImage</code> / <code>logoImage</code> に https の SVG (180×30px 推奨) を指定します。
     </p>
   </fieldset>

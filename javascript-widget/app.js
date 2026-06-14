@@ -115,7 +115,7 @@
     var cmd = ev.currentTarget.getAttribute("data-cmd");
     var val = ev.currentTarget.getAttribute("data-val");
     miitelWidget(cmd, val);
-    log("customize: " + cmd + " = " + val);
+    log("customize: " + cmd + " = " + val + " (反映はソフトフォンを開き直した時。color の既定は black)");
   }
 
   document.getElementById("callBtn").addEventListener("click", onCallClick);
