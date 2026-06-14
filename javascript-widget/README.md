@@ -29,7 +29,9 @@
    <!-- end miitel widget -->
    ```
 
-3. `index.html` の同じ箇所の `company_id` / `access_key` / `src` を、取得したスニペットの値に置き換えます。
+3. `index.html` の `<!-- begin miitel widget -->` 〜 `<!-- end miitel widget -->` の**ブロックを丸ごと**、
+   取得したスニペットで置き換えます。`company_id` / `access_key` だけでなく、
+   **`src` のホストもテナント固有**（環境で異なる）なので必ず差し替えてください。
 
 > **注意:** `access_key` はブラウザに配信される**公開クライアントキー**です（ページのソースで見えます）。
 > サーバー用シークレットではありませんが、リポジトリにはテナント固有値を直書きせず
@@ -45,7 +47,16 @@ python3 -m http.server 8000
 # ブラウザで http://localhost:8000/ を開く
 ```
 
-`company_id` / `access_key` を正しく設定していれば、画面右下に **[MiiTel Phone]** ボタンが表示されます。
+スニペット（`company_id` / `access_key` / `src`）を正しく設定していれば、画面右下に
+**[MiiTel Phone]** ボタンが表示されます。
+
+### うまく表示されないとき
+
+- **`GET https://.../static/widget/v1.js net::ERR_NAME_NOT_RESOLVED`**
+  → `src` のホストがテナントと不一致です。Admin スニペットの `src` をそのまま使ってください
+  （例: 開発テナントは `https://api.miiteldevelopment.net/static/widget/v1.js`）。
+- **ボタンが出ない / 401・403 が出る** → `company_id` / `access_key` が未設定またはプレースホルダのままです。
+- ブラウザの開発者ツール（Network / Console）でエラー内容を確認すると原因を切り分けやすいです。
 
 ## 提供 API（`window.miitelWidget`）
 

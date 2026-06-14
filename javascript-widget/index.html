@@ -7,10 +7,12 @@
 
   <!--
     === MiiTel JavaScript ウィジェットの埋め込み ===
-    MiiTel Admin の [外部連携] > [JavaScript ウィジェット] で表示される HTML を貼り付けます。
-    company_id / access_key は自分のテナントの値に置き換えてください。
-    src の URL も Admin が払い出すスニペットのものを使ってください
-    (本番テナントは api.miitel.com、開発テナントは api.miiteldevelopment.net など)。
+    下の <!-- begin/end miitel widget --> の中身を、MiiTel Admin の
+    [外部連携] > [JavaScript ウィジェット] に表示されるスニペットで「丸ごと置き換え」てください。
+
+    company_id / access_key / src の 3 つすべてがテナント固有です。
+    特に src のホストは環境ごとに異なります (例: 開発テナントは api.miiteldevelopment.net)。
+    src を置き換えないと "ERR_NAME_NOT_RESOLVED" でウィジェットが読み込めません。
 
     注意: access_key はブラウザに配信される公開クライアントキーです (ページのソースで見えます)。
           サーバー用のシークレットではありませんが、リポジトリにはテナント固有値を直書きせず
@@ -25,7 +27,7 @@
     miitelWidget("company_id", "YOUR_COMPANY_ID");
     miitelWidget("access_key", "YOUR_ACCESS_KEY");
   </script>
-  <script async src="https://api.miitel.com/static/widget/v1.js"></script>
+  <script async src="https://YOUR_MIITEL_API_HOST/static/widget/v1.js"></script>
   <!-- end miitel widget -->
 
   <style>
@@ -45,8 +47,9 @@
   <h1>MiiTel JavaScript ウィジェット サンプル</h1>
   <p class="note">
     画面右下に [MiiTel Phone] ボタンが表示されれば埋め込み成功です。
-    表示されない場合は、上部の <code>company_id</code> / <code>access_key</code> /
-    <code>src</code> を自分のテナントの値に置き換えてください。
+    表示されない場合は、上部の <code>&lt;!-- begin/end miitel widget --&gt;</code> ブロックを
+    Admin のスニペットで丸ごと置き換えてください（<code>company_id</code> /
+    <code>access_key</code> に加え、<code>src</code> のホストもテナント固有です）。
   </p>
 
   <fieldset>
