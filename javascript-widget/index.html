@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MiiTel JavaScript ウィジェット サンプル</title>
+
+  <!--
+    === MiiTel JavaScript ウィジェットの埋め込み ===
+    下の <!-- begin/end miitel widget --> の中身を、MiiTel Admin の
+    [外部連携] > [JavaScript ウィジェット] に表示されるスニペットで「丸ごと置き換え」てください。
+
+    company_id / access_key / src の 3 つすべてがテナント固有です。
+    特に src のホストは環境ごとに異なります (例: 開発テナントは api.miiteldevelopment.net)。
+    src を置き換えないと "ERR_NAME_NOT_RESOLVED" でウィジェットが読み込めません。
+
+    注意: access_key はブラウザに配信される公開クライアントキーです (ページのソースで見えます)。
+          サーバー用のシークレットではありませんが、リポジトリにはテナント固有値を直書きせず
+          プレースホルダのままにしています。
+  -->
+  <!-- begin miitel widget -->
+  <script>
+    window.miitelWidget = window.miitelWidget || function (k, v) {
+      miitelWidget.conf = miitelWidget.conf || {};
+      miitelWidget.conf[k] = v;
+    };
+    miitelWidget("company_id", "YOUR_COMPANY_ID");
+    miitelWidget("access_key", "YOUR_ACCESS_KEY");
+  </script>
+  <script async src="https://YOUR_MIITEL_API_HOST/static/widget/v1.js"></script>
+  <!-- end miitel widget -->
+
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 720px; margin: 2rem auto; padding: 0 1rem; line-height: 1.6; }
+    h1 { font-size: 1.4rem; }
+    fieldset { border: 1px solid #ccc; border-radius: 8px; margin-bottom: 1rem; padding: 1rem; }
+    legend { font-weight: bold; padding: 0 .4rem; }
+    label { display: inline-block; min-width: 9rem; }
+    input { padding: .3rem .5rem; }
+    button { padding: .4rem .9rem; margin: .2rem .2rem 0 0; cursor: pointer; }
+    #log { background: #111; color: #0f0; font-family: monospace; font-size: .85rem;
+           padding: .8rem; border-radius: 8px; height: 16rem; overflow-y: auto; white-space: pre-wrap; }
+    .note { color: #666; font-size: .85rem; }
+  </style>
+</head>
+<body>
+  <h1>MiiTel JavaScript ウィジェット サンプル</h1>
+  <p class="note">
+    画面右下に [MiiTel Phone] ボタンが表示されれば埋め込み成功です。
+    表示されない場合は、上部の <code>&lt;!-- begin/end miitel widget --&gt;</code> ブロックを
+    Admin のスニペットで丸ごと置き換えてください（<code>company_id</code> /
+    <code>access_key</code> に加え、<code>src</code> のホストもテナント固有です）。
+  </p>
+
+  <fieldset>
+    <legend>クリック to コール</legend>
+    <div>
+      <label for="phoneNumber">発信先電話番号</label>
+      <input id="phoneNumber" type="tel" value="09012345678" placeholder="半角数字" />
+    </div>
+    <div>
+      <label for="companyName">取引先会社名 (任意)</label>
+      <input id="companyName" type="text" placeholder="連絡先登録する場合" />
+    </div>
+    <div>
+      <label for="contactPersonName">取引先担当者名 (任意)</label>
+      <input id="contactPersonName" type="text" placeholder="連絡先登録する場合" />
+    </div>
+    <div>
+      <button id="callBtn">発信</button>
+      <button id="hangupBtn">通話終了 (hangup)</button>
+    </div>
+    <p class="note">会社名・担当者名の両方を入力すると、発信先番号を連絡先に登録します。</p>
+  </fieldset>
+
+  <fieldset>
+    <legend>外観カスタマイズ</legend>
+    <button data-cmd="position" data-val="left_bottom">位置: 左下</button>
+    <button data-cmd="position" data-val="right_bottom">位置: 右下</button>
+    <button data-cmd="color" data-val="white">色: 白</button>
+    <button data-cmd="color" data-val="black">色: 黒</button>
+    <p class="note">
+      反映はソフトフォンを<strong>次に開いた時</strong>です（表示中は即時反映されないことがあります）。
+      <code>color</code> の既定は <strong>黒</strong>なので「黒」は見た目が変わりません（「白」で違いを確認）。
+      初期表示から効かせたい場合は読み込み時の <code>conf</code> で指定します (app.js のコメント参照)。
+      ボタン/ロゴ画像は <code>openButtonImage</code> / <code>logoImage</code> に https の SVG (180×30px 推奨) を指定します。
+    </p>
+  </fieldset>
+
+  <fieldset>
+    <legend>イベントログ</legend>
+    <p class="note">着信・発信・通話開始/終了・シーケンス ID などのイベントをここに表示します。</p>
+    <div id="log"></div>
+    <button id="clearLogBtn">ログをクリア</button>
+  </fieldset>
+
+  <script src="app.js" defer></script>
+</body>
+</html>
